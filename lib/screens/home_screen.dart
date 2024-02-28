@@ -1,93 +1,106 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart'; // For Flutter mobile
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mobile_computing/services/location.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _showLocation = false;
-  LatLng? _userLocation;
-  LocationPermission? permission; // Declare permission variable here
+  LatLng? _initialLocation;
+  String? query;
 
-  Future<void> _requestLocationPermission() async {
-    // Implement platform-specific logic to request location permission
-    // and handle errors appropriately. For example, on Flutter mobile:
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.deniedForever) {
-      // Handle permanently denied permission (e.g., display an error message)
-      return;
-    }
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
   }
 
-  Future<void> _getUserLocation() async {
-    // Use the appropriate location service library to get the user's
-    // current location (e.g., `Geolocation.getCurrentPosition()` on web,
-    // `Geolocator.getCurrentPosition()` on mobile).
-    // Update the `_userLocation` state variable with the obtained LatLng.
-    try {
-      Position position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _userLocation = LatLng(position.latitude, position.longitude);
-      });
-    } catch (e) {
-      // Handle location request errors appropriately (e.g., display an error message)
-      print("Error getting location: $e");
-    }
+  Future<void> _getCurrentLocation() async {
+    Position position = await LocationService().getCurrentLocation();
+    setState(() {
+      _initialLocation = LatLng(position.latitude, position.longitude);
+    });
+    controller.move(_initialLocation!, 16);
   }
+
+  final controller = MapController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FlutterMap(
-        options: MapOptions(
-          initialCenter: LatLng(
-              51.509364, -0.128928), // Replace with your default location
-          initialZoom: 9.2,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName:
-                'com.example.app', // Replace with your app name
-          ),
-          CircleLayer(
-            circles: [
-              if (_userLocation != null)
-                CircleMarker(
-                  point: _userLocation!,
-                  color: Colors.blue.withOpacity(0.3),
-                  radius: 100, // Adjust radius as needed
-                  useRadiusInMeter: true, // Customize based on requirements
-                  borderStrokeWidth: 2,
-                  borderColor: Colors.blue,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            if (_initialLocation != null)
+              FlutterMap(
+                options: MapOptions(
+                  initialCenter: _initialLocation!,
+                  initialZoom: 16,
+                  maxZoom: 20,
                 ),
-            ],
-          ),
-        ],
+                mapController: controller,
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                          height: 80,
+                          width: 80,
+                          point: _initialLocation!,
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.2),
+                                shape: BoxShape.circle),
+                            child: Icon(
+                              Icons.pin_drop, // Default icon
+                              size: 20,
+                              color: Colors.red.shade800,
+                            ),
+                          ),
+                          rotate: true),
+                    ],
+                  ),
+                ],
+              )
+            else
+              Center(
+                child: CircularProgressIndicator(),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SearchBar(
+                hintText: "Search Location",
+                constraints: BoxConstraints(minHeight: 45),
+                trailing: [
+                  IconButton(
+                    icon: Icon(Icons.search), // Default search icon
+                    onPressed: () async {
+                      await LocationService().getLocation();
+                    },
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          if (!_showLocation) {
-            await _requestLocationPermission();
-            if (permission == LocationPermission.whileInUse) {
-              // Use whileInUse
-              await _getUserLocation();
-            }
-          }
-          setState(() {
-            _showLocation = !_showLocation;
-          });
+        child: Icon(Icons.location_on), // Default location icon
+        backgroundColor: Color(0xFF131b23),
+        foregroundColor: Color(0xFFe7dfc6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+        onPressed: () {
+          _getCurrentLocation();
         },
-        child: Icon(_showLocation ? Icons.location_on : Icons.location_off),
       ),
     );
   }
