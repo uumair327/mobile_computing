@@ -89,13 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     icon: Icon(Icons.search),
                     onPressed: () async {
-                      // Handle search functionality as needed (replace with your implementation)
-                      // For example, use a dialog or sheet to enter search terms
-                      // and call LocationService.searchLocation(query) to retrieve results.
-                      // Update UI accordingly based on the search results.
-
-                      debugPrint(
-                          'Search button pressed, implement your search logic here.');
+                      debugPrint('Search button pressed');
                     },
                   )
                 ],
