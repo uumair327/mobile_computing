@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geocoding/geocoding.dart'; // Use geocoding package instead of nominatim_geocoding
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mobile_computing/services/location.dart'; // Assuming this is your custom service
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 options: MapOptions(
                   center:
                       _initialLocation!, // Use center instead of initialCenter for smoothness
-                  zoom: 16, // Set initial zoom level
+                  zoom: 16,
                   maxZoom: 20,
                 ),
                 mapController: controller,
@@ -85,11 +86,16 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SearchBar(
                 hintText: "Search Location",
                 constraints: BoxConstraints(minHeight: 45),
+                onChanged: (value) {
+                  query = value; // Store the search query
+                },
                 trailing: [
                   IconButton(
                     icon: Icon(Icons.search),
                     onPressed: () async {
-                      debugPrint('Search button pressed');
+                      if (query == null || query!.isEmpty) return;
+                      // Perform location search using the query and update map
+                      await _searchLocation(query!);
                     },
                   )
                 ],
@@ -108,5 +114,22 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _searchLocation(String searchQuery) async {
+    List<Location> locations = await locationFromAddress(searchQuery);
+
+    if (locations.isNotEmpty) {
+      // Get the first location from the results (you can handle multiple suggestions differently)
+      Location location = locations.first;
+      setState(() {
+        _initialLocation = LatLng(location.latitude!, location.longitude!);
+        controller.move(
+            _initialLocation!, 16); // Center map on the searched location
+      });
+    } else {
+      // Handle no results found scenario (show a message or suggest alternatives)
+      print("Location not found.");
+    }
   }
 }
