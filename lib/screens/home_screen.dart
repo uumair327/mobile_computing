@@ -113,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: SearchBar(
+                // backgroundColor: ,
                 hintText: "Search Location",
                 constraints: const BoxConstraints(minHeight: 45),
                 onChanged: (value) {
