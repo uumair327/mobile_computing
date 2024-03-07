@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geocoding/geocoding.dart'; // Use geocoding package instead of nominatim_geocoding
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mobile_computing/screens/signin_screen.dart';
 import 'package:mobile_computing/services/location.dart'; // Assuming this is your custom service
 
 class HomeScreen extends StatefulWidget {
@@ -35,6 +37,33 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.deepPurpleAccent,
+        // leading: IconButton(
+        //   icon: Icon(Icons.arrow_back),
+        //   tooltip: "Cancel and Return to List",
+        //   onPressed: () {
+        //     Navigator.pop(context, true);
+        //   },
+        // ),
+        // automaticallyImplyLeading: false,
+        title: const Text("Mobile Computing"),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: "Save Todo and Retrun to List",
+            onPressed: () {
+              FirebaseAuth.instance.signOut().then((value) {
+                print("Signed Out");
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SignInScreen()));
+              });
+            },
+          )
+        ],
+      ),
       body: SafeArea(
         child: Stack(
           children: [
@@ -78,20 +107,20 @@ class _HomeScreenState extends State<HomeScreen> {
             Center(
               // Display progress indicator only while loading
               child: _initialLocation == null
-                  ? CircularProgressIndicator()
-                  : SizedBox(),
+                  ? const CircularProgressIndicator()
+                  : const SizedBox(),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: SearchBar(
                 hintText: "Search Location",
-                constraints: BoxConstraints(minHeight: 45),
+                constraints: const BoxConstraints(minHeight: 45),
                 onChanged: (value) {
                   query = value; // Store the search query
                 },
                 trailing: [
                   IconButton(
-                    icon: Icon(Icons.search),
+                    icon: const Icon(Icons.search),
                     onPressed: () async {
                       if (query == null || query!.isEmpty) return;
                       // Perform location search using the query and update map
@@ -99,19 +128,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   )
                 ],
+                // backgroundColor: Colors.blue,
               ),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.location_on),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.deepPurple,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
         onPressed: () {
           _getCurrentLocation();
         },
+        child: const Icon(Icons.location_on),
       ),
     );
   }
